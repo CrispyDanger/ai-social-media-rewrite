@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+---
+
+Prefer small, focused changes. Make he smallest diff that solves the task; avoid large rewrites. If refactor is needed, do it in a separate commit/step.

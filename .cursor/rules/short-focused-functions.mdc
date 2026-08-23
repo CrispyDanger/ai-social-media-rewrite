@@ -1,0 +1,52 @@
+---
+alwaysApply: true
+---
+
+---
+description: Keep functions short and focused for readability and maintainability
+alwaysApply: true
+---
+
+# Short, Focused Functions
+
+Every function should do **one thing** and do it well. If a function is hard to name or needs comments explaining sections, it likely needs splitting.
+
+## Guidelines
+
+- **Max ~25 lines** of logic per function (excluding docstrings/comments). If it's longer, extract helpers.
+- **Single responsibility**: a function should have one clear reason to change.
+- **One level of abstraction**: don't mix high-level orchestration with low-level details in the same function.
+- **Descriptive names over comments**: if you need a comment to explain *what* a block does, extract it into a well-named function instead.
+
+## Example
+
+```python
+# BAD - does too many things
+def process_order(order):
+    # validate
+    if not order.items:
+        raise ValueError("Empty order")
+    if order.total < 0:
+        raise ValueError("Negative total")
+    # apply discount
+    if order.coupon:
+        order.total *= 0.9
+    # save
+    db.session.add(order)
+    db.session.commit()
+    # notify
+    send_email(order.user.email, "Order confirmed", render_template(order))
+
+# GOOD - each step is its own function
+def process_order(order):
+    validate_order(order)
+    apply_discount(order)
+    save_order(order)
+    notify_customer(order)
+```
+
+## When Refactoring
+
+- Extract repeated logic into shared helpers.
+- Prefer pure functions (no side effects) where possible; isolate I/O at the boundaries.
+- If a function accepts more than 3-4 parameters, consider grouping them into a data class or dict.
