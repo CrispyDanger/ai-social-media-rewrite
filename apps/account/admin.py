@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.contrib.auth.forms import UserChangeForm, UserCreationForm
 
-from apps.account.models import Follow, Profile, User
+from apps.account.models import Follow, Profile, User, UserSettings
 
 
 class AccountUserCreationForm(UserCreationForm):
@@ -81,3 +81,19 @@ class FollowAdmin(admin.ModelAdmin):
     search_fields = ('follower__username', 'following__username')
     autocomplete_fields = ('follower', 'following')
     readonly_fields = ('created_at',)
+
+
+@admin.register(UserSettings)
+class UserSettingsAdmin(admin.ModelAdmin):
+    list_display = ('user', 'has_openrouter_api_key', 'updated_at')
+    search_fields = ('user__username', 'user__email')
+    autocomplete_fields = ('user',)
+    readonly_fields = (
+        'has_openrouter_api_key',
+        'updated_at',
+    )
+    fields = (
+        'user',
+        'has_openrouter_api_key',
+        'updated_at',
+    )

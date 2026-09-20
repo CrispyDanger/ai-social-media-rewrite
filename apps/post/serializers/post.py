@@ -1,14 +1,9 @@
 from rest_framework import serializers
 
-from apps.account.models import User
 from apps.post.models import Post
 from apps.space.models import Membership, Space
 
-
-class AuthorSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ('id', 'username', 'display_name')
+from .author import AuthorSerializer
 
 
 class PostSerializer(serializers.ModelSerializer):
