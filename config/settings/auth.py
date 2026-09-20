@@ -36,11 +36,19 @@ SIMPLE_JWT = {
     'UPDATE_LAST_LOGIN': True,
 }
 
+AUTH_USER_MODEL = 'user_account.User'
+
 ACCOUNT_LOGIN_METHODS = {'email'}
-ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
+ACCOUNT_SIGNUP_FIELDS = [
+    'email*',
+    'username*',
+    'display_name*',
+    'password1*',
+    'password2*',
+]
 ACCOUNT_EMAIL_VERIFICATION = 'optional'
 ACCOUNT_UNIQUE_EMAIL = True
-ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_USER_MODEL_USERNAME_FIELD = 'username'
 
 SOCIALACCOUNT_ADAPTER = 'apps.account.adapters.SocialAccountAdapter'
 SOCIALACCOUNT_AUTO_SIGNUP = True
