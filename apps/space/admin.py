@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from apps.space.models import Membership, Space
+from apps.space.models import Invite, Membership, Space
 
 
 class MembershipInline(admin.TabularInline):
@@ -25,4 +25,18 @@ class MembershipAdmin(admin.ModelAdmin):
     list_display = ('user', 'space', 'created_at')
     search_fields = ('user__username', 'space__name', 'space__slug')
     autocomplete_fields = ('user', 'space')
+    readonly_fields = ('created_at',)
+
+
+@admin.register(Invite)
+class InviteAdmin(admin.ModelAdmin):
+    list_display = ('space', 'invitee', 'invited_by', 'status', 'created_at')
+    list_filter = ('status',)
+    search_fields = (
+        'invitee__username',
+        'invited_by__username',
+        'space__name',
+        'space__slug',
+    )
+    autocomplete_fields = ('space', 'invitee', 'invited_by')
     readonly_fields = ('created_at',)

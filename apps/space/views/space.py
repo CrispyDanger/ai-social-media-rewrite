@@ -1,14 +1,10 @@
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
 from apps.space.models import Space
 from apps.space.permissions import IsCreatorOrReadOnly
 from apps.space.serializers import SpaceSerializer
-
-
-class SpacePagination(PageNumberPagination):
-    page_size = 20
+from apps.space.views.pagination import SpacePagination
 
 
 class SpaceViewSet(ModelViewSet):
