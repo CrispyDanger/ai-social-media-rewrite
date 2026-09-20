@@ -1,6 +1,23 @@
+from allauth.account.adapter import DefaultAccountAdapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from django.contrib.auth import get_user_model
 from django.utils.text import slugify
+
+
+class AccountAdapter(DefaultAccountAdapter):
+    def save_user(self, request, user, form, commit=True):
+        user = super().save_user(request, user, form, commit=False)
+        display_name = self._display_name_from(form, user.username)
+        if display_name:
+            user.display_name = display_name[:50]
+        if commit:
+            user.save()
+        return user
+
+    def _display_name_from(self, form, username):
+        cleaned = getattr(form, 'cleaned_data', None) or {}
+        name = (cleaned.get('display_name') or '').strip()
+        return name or username
 
 
 class SocialAccountAdapter(DefaultSocialAccountAdapter):

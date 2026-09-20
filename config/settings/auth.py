@@ -26,6 +26,8 @@ REST_AUTH = {
     'JWT_AUTH_HTTPONLY': False,
     'SESSION_LOGIN': False,
     'TOKEN_MODEL': None,
+    'USER_DETAILS_SERIALIZER': 'apps.account.serializers.UserDetailsSerializer',
+    'REGISTER_SERIALIZER': 'apps.account.serializers.RegisterSerializer',
 }
 
 SIMPLE_JWT = {
@@ -50,6 +52,7 @@ ACCOUNT_EMAIL_VERIFICATION = 'optional'
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_USER_MODEL_USERNAME_FIELD = 'username'
 
+ACCOUNT_ADAPTER = 'apps.account.adapters.AccountAdapter'
 SOCIALACCOUNT_ADAPTER = 'apps.account.adapters.SocialAccountAdapter'
 SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_EMAIL_AUTHENTICATION = True

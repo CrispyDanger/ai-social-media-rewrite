@@ -34,6 +34,13 @@ class Post(models.Model):
         null=True,
         blank=True,
     )
+    space = models.ForeignKey(
+        'space.Space',
+        on_delete=models.CASCADE,
+        related_name='posts',
+        null=True,
+        blank=True,
+    )
 
     objects = PostQuerySet.as_manager()
 
@@ -42,6 +49,7 @@ class Post(models.Model):
         indexes = [
             models.Index(fields=['author', '-created_at']),
             models.Index(fields=['parent', '-created_at']),
+            models.Index(fields=['space', '-created_at'], name='post_space_created_idx'),
         ]
         constraints = [
             models.CheckConstraint(

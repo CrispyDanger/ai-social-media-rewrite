@@ -1,7 +1,7 @@
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from apps.feed.tests.helpers import create_post, create_user, hours_ago, like_post
+from apps.feed.tests.helpers import create_post, create_space, create_user, hours_ago, like_post
 
 
 class PostApiTests(APITestCase):
@@ -22,6 +22,7 @@ class PostApiTests(APITestCase):
         self.assertEqual(response.data['author']['username'], 'author')
         self.assertIsNone(response.data['parent'])
         self.assertEqual(response.data['like_count'], 0)
+        self.assertIsNone(response.data['space'])
 
     def test_create_rejects_blank_text(self):
         response = self.client.post('/api/posts/', {'text': '   '}, format='json')
@@ -57,6 +58,64 @@ class PostApiTests(APITestCase):
         create_post(self.author, text='original')
         ids = self._ids(f'/api/posts/?parent={parent.id}')
         self.assertEqual(ids, [reply.id])
+
+    def test_create_in_space_as_member(self):
+        space = create_space(self.author, name='Python', slug='python')
+        response = self.client.post(
+            '/api/posts/',
+            {'text': 'in space', 'space': 'python'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['space'], 'python')
+        self.assertEqual(space.posts.get().text, 'in space')
+
+    def test_create_in_space_as_non_member_is_rejected(self):
+        create_space(self.other, name='Python', slug='python')
+        response = self.client.post(
+            '/api/posts/',
+            {'text': 'nope', 'space': 'python'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_list_filters_by_space(self):
+        space = create_space(self.author, name='Python', slug='python')
+        in_space = create_post(self.author, text='inside', space=space)
+        create_post(self.author, text='outside')
+        ids = self._ids('/api/posts/?space=python')
+        self.assertEqual(ids, [in_space.id])
+
+    def test_list_space_filter_hides_non_member(self):
+        space = create_space(self.other, name='Python', slug='python')
+        create_post(self.other, text='secret', space=space)
+        ids = self._ids('/api/posts/?space=python')
+        self.assertEqual(ids, [])
+
+    def test_reply_inherits_parent_space(self):
+        space = create_space(self.author, name='Python', slug='python')
+        parent = create_post(self.author, text='parent', space=space)
+        response = self.client.post(
+            '/api/posts/',
+            {'text': 'reply', 'parent': parent.id},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['space'], 'python')
+
+    def test_update_ignores_space_change(self):
+        space = create_space(self.author, name='Python', slug='python')
+        other = create_space(self.author, name='Rust', slug='rust')
+        post = create_post(self.author, text='draft', space=space)
+        response = self.client.patch(
+            f'/api/posts/{post.id}/',
+            {'text': 'edited', 'space': other.slug},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        post.refresh_from_db()
+        self.assertEqual(post.text, 'edited')
+        self.assertEqual(post.space_id, space.id)
 
     def test_retrieve_includes_counts_and_author(self):
         post = create_post(self.other, text='counted')

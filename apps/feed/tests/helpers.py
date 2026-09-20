@@ -5,6 +5,7 @@ from django.utils import timezone
 from apps.account.models import Follow, User
 from apps.interaction.models import Like
 from apps.post.models import Post, Repost
+from apps.space.models import Membership, Space
 
 
 def create_user(username):
@@ -16,8 +17,8 @@ def create_user(username):
     )
 
 
-def create_post(author, text='hello', created_at=None, parent=None):
-    post = Post.objects.create(author=author, text=text, parent=parent)
+def create_post(author, text='hello', created_at=None, parent=None, space=None):
+    post = Post.objects.create(author=author, text=text, parent=parent, space=space)
     if created_at is not None:
         set_created_at(post, created_at)
     return post
@@ -36,6 +37,12 @@ def hours_ago(hours, now=None):
 def days_ago(days, now=None):
     now = now or timezone.now()
     return now - timedelta(days=days)
+
+
+def create_space(creator, name='Python', slug='python'):
+    space = Space.objects.create(name=name, slug=slug, created_by=creator)
+    Membership.objects.get_or_create(space=space, user=creator)
+    return space
 
 
 def follow(follower, following):

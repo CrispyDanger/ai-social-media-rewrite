@@ -5,6 +5,7 @@ from rest_framework.viewsets import ModelViewSet
 from apps.post.models import Post
 from apps.post.permissions import IsAuthorOrReadOnly
 from apps.post.serializers import PostSerializer
+from apps.space.models import Membership
 
 
 class PostPagination(PageNumberPagination):
@@ -18,7 +19,7 @@ class PostViewSet(ModelViewSet):
 
     def get_queryset(self):
         queryset = (
-            Post.objects.select_related('author')
+            Post.objects.select_related('author', 'space')
             .with_engagement_counts()
             .order_by('-created_at', '-id')
         )
@@ -36,7 +37,8 @@ class PostViewSet(ModelViewSet):
 
     def _apply_filters(self, queryset):
         queryset = self._filter_by_id(queryset, 'author', 'author_id')
-        return self._filter_by_id(queryset, 'parent', 'parent_id')
+        queryset = self._filter_by_id(queryset, 'parent', 'parent_id')
+        return self._filter_by_space(queryset)
 
     def _filter_by_id(self, queryset, param, field):
         value = self.request.query_params.get(param)
@@ -46,8 +48,20 @@ class PostViewSet(ModelViewSet):
             return queryset.none()
         return queryset.filter(**{field: value})
 
+    def _filter_by_space(self, queryset):
+        slug = self.request.query_params.get('space')
+        if slug is None:
+            return queryset
+        if not Membership.objects.filter(
+            space__slug__iexact=slug,
+            user=self.request.user,
+        ).exists():
+            return queryset.none()
+        return queryset.filter(space__slug__iexact=slug)
+
     def _lock_relations_on_update(self, serializer):
         if getattr(self, 'action', None) not in ('update', 'partial_update'):
             return
         serializer.fields['parent'].read_only = True
         serializer.fields['quoted_post'].read_only = True
+        serializer.fields['space'].read_only = True
