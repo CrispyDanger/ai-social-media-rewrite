@@ -68,6 +68,14 @@ class User(AbstractUser):
     email = models.EmailField(_('email address'), unique=True)
     display_name = models.CharField(max_length=50)
     is_verified = models.BooleanField(default=False)
+    following = models.ManyToManyField(
+        'self',
+        through='Follow',
+        through_fields=('follower', 'following'),
+        related_name='followers',
+        symmetrical=False,
+        blank=True,
+    )
 
     objects = UserManager()
 

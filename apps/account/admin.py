@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.contrib.auth.forms import UserChangeForm, UserCreationForm
 
-from apps.account.models import Profile, User
+from apps.account.models import Follow, Profile, User
 
 
 class AccountUserCreationForm(UserCreationForm):
@@ -73,3 +73,11 @@ class UserAdmin(DjangoUserAdmin):
             },
         ),
     )
+
+
+@admin.register(Follow)
+class FollowAdmin(admin.ModelAdmin):
+    list_display = ('follower', 'following', 'created_at')
+    search_fields = ('follower__username', 'following__username')
+    autocomplete_fields = ('follower', 'following')
+    readonly_fields = ('created_at',)
