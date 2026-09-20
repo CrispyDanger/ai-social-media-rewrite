@@ -1,6 +1,5 @@
 from datetime import timedelta
 
-from django.db.models import Count
 from django.utils import timezone
 
 from apps.feed.services.ranking import (
@@ -15,7 +14,7 @@ from apps.post.models import Post
 def following_posts(user):
     author_ids = _followed_author_ids(user)
     queryset = original_posts().filter(author_id__in=author_ids)
-    return annotate_engagement_counts(queryset).order_by('-created_at')
+    return queryset.with_engagement_counts().order_by('-created_at')
 
 
 def for_you_posts(user):
@@ -27,14 +26,6 @@ def for_you_posts(user):
 
 def original_posts():
     return Post.objects.filter(parent__isnull=True).select_related('author')
-
-
-def annotate_engagement_counts(queryset):
-    return queryset.annotate(
-        like_count=Count('likes', distinct=True),
-        repost_count=Count('reposts', distinct=True),
-        reply_count=Count('replies', distinct=True),
-    )
 
 
 def _followed_author_ids(user):
@@ -49,8 +40,7 @@ def _for_you_candidates(user, now):
         .exclude(author=user)
         .filter(created_at__gte=since)
     )
-    annotated = annotate_engagement_counts(queryset)
-    return annotated.order_by('-created_at')[:CANDIDATE_LIMIT]
+    return queryset.with_engagement_counts().order_by('-created_at')[:CANDIDATE_LIMIT]
 
 
 def _rank_key(post, now, affinity_ids):

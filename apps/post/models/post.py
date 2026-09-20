@@ -1,5 +1,15 @@
 from django.conf import settings
 from django.db import models
+from django.db.models import Count, QuerySet
+
+
+class PostQuerySet(QuerySet):
+    def with_engagement_counts(self):
+        return self.annotate(
+            like_count=Count('likes', distinct=True),
+            repost_count=Count('reposts', distinct=True),
+            reply_count=Count('replies', distinct=True),
+        )
 
 
 class Post(models.Model):
@@ -24,6 +34,8 @@ class Post(models.Model):
         null=True,
         blank=True,
     )
+
+    objects = PostQuerySet.as_manager()
 
     class Meta:
         ordering = ['-created_at']
