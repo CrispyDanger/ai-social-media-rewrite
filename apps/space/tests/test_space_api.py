@@ -2,7 +2,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from apps.feed.tests.helpers import create_user, hours_ago, set_created_at
-from apps.space.models import Space
+from apps.space.models import Membership, Space
 
 
 class SpaceApiTests(APITestCase):
@@ -49,24 +49,30 @@ class SpaceApiTests(APITestCase):
 
     def test_list_returns_newest_first(self):
         older = self._create_space(self.creator, name='Older', slug='older')
-        newer = self._create_space(self.other, name='Newer', slug='newer')
+        newer = self._create_space(self.creator, name='Newer', slug='newer')
         set_created_at(older, hours_ago(2))
         set_created_at(newer, hours_ago(1))
         ids = self._ids('/api/spaces/')
         self.assertEqual(ids, [newer.id, older.id])
 
-    def test_list_filters_by_member(self):
-        joined = self._create_space(self.creator, name='Joined', slug='joined')
-        self._create_space(self.other, name='Hidden', slug='hidden')
-        ids = self._ids(f'/api/spaces/?member={self.creator.id}')
-        self.assertEqual(ids, [joined.id])
+    def test_list_omits_spaces_user_is_not_in(self):
+        visible = self._create_space(self.creator, name='Mine', slug='mine')
+        self._create_space(self.other, name='Theirs', slug='theirs')
+        ids = self._ids('/api/spaces/')
+        self.assertEqual(ids, [visible.id])
 
-    def test_retrieve_by_slug(self):
+    def test_retrieve_member_space(self):
         space = self._create_space(self.other, name='Python', slug='python')
+        Membership.objects.create(space=space, user=self.creator)
         response = self.client.get('/api/spaces/python/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['id'], space.id)
-        self.assertEqual(response.data['member_count'], 1)
+        self.assertEqual(response.data['member_count'], 2)
+
+    def test_retrieve_non_member_space_is_not_found(self):
+        self._create_space(self.other, name='Python', slug='python')
+        response = self.client.get('/api/spaces/python/')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_update_own_space_name(self):
         space = self._create_space(self.creator, name='Draft', slug='draft')
@@ -91,8 +97,18 @@ class SpaceApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['slug'], 'draft')
 
-    def test_update_others_space_is_forbidden(self):
+    def test_update_non_member_space_is_not_found(self):
         self._create_space(self.other, name='Theirs', slug='theirs')
+        response = self.client.patch(
+            '/api/spaces/theirs/',
+            {'name': 'Stolen'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_member_cannot_update_others_space(self):
+        space = self._create_space(self.other, name='Theirs', slug='theirs')
+        Membership.objects.create(space=space, user=self.creator)
         response = self.client.patch(
             '/api/spaces/theirs/',
             {'name': 'Stolen'},
@@ -106,10 +122,10 @@ class SpaceApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(Space.objects.filter(slug='gone').exists())
 
-    def test_delete_others_space_is_forbidden(self):
+    def test_delete_non_member_space_is_not_found(self):
         self._create_space(self.other, name='Theirs', slug='theirs')
         response = self.client.delete('/api/spaces/theirs/')
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertTrue(Space.objects.filter(slug='theirs').exists())
 
     def _create_space(self, creator, name, slug):

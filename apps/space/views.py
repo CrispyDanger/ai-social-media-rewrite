@@ -1,4 +1,3 @@
-from django.db.models import Count
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
@@ -19,14 +18,12 @@ class SpaceViewSet(ModelViewSet):
     lookup_field = 'slug'
 
     def get_queryset(self):
-        queryset = (
-            Space.objects.select_related('created_by')
-            .annotate(member_count=Count('memberships'))
+        return (
+            Space.objects.visible_to(self.request.user)
+            .select_related('created_by')
+            .with_member_count()
             .order_by('-created_at', '-id')
         )
-        if self.action == 'list':
-            return self._apply_filters(queryset)
-        return queryset
 
     def perform_create(self, serializer):
         space = serializer.save(created_by=self.request.user)
@@ -36,17 +33,6 @@ class SpaceViewSet(ModelViewSet):
         serializer = super().get_serializer(*args, **kwargs)
         self._lock_slug_on_update(serializer)
         return serializer
-
-    def _apply_filters(self, queryset):
-        return self._filter_by_id(queryset, 'member', 'members')
-
-    def _filter_by_id(self, queryset, param, field):
-        value = self.request.query_params.get(param)
-        if value is None:
-            return queryset
-        if not str(value).isdigit():
-            return queryset.none()
-        return queryset.filter(**{field: value})
 
     def _lock_slug_on_update(self, serializer):
         if getattr(self, 'action', None) not in ('update', 'partial_update'):

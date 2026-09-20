@@ -1,6 +1,19 @@
 from django.conf import settings
 from django.db import models
+from django.db.models import Count, Exists, OuterRef, QuerySet
 from django.db.models.functions import Lower
+
+
+class SpaceQuerySet(QuerySet):
+    def visible_to(self, user):
+        is_member = self.model.members.through.objects.filter(
+            space_id=OuterRef('pk'),
+            user=user,
+        )
+        return self.filter(Exists(is_member))
+
+    def with_member_count(self):
+        return self.annotate(member_count=Count('memberships'))
 
 
 class Space(models.Model):
@@ -20,6 +33,8 @@ class Space(models.Model):
         related_name='spaces',
         blank=True,
     )
+
+    objects = SpaceQuerySet.as_manager()
 
     class Meta:
         constraints = [
