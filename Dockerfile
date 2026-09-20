@@ -1,4 +1,4 @@
-FROM python:3.14-slim AS base
+FROM python:3.14-alpine AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -6,16 +6,19 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpq-dev gcc \
-    && rm -rf /var/lib/apt/lists/*
+RUN pip install --no-cache-dir --upgrade \
+    'setuptools>=78.1.1' \
+    'msgpack>=1.2.1'
 
 FROM base AS deps
+RUN apk add --no-cache gcc musl-dev libpq-dev
 COPY pyproject.toml uv.lock ./
 RUN pip install uv && uv sync --frozen --no-dev
 
 FROM base AS runtime
-RUN groupadd -r django && useradd -r -g django django
+RUN apk add --no-cache libpq \
+    && addgroup -S django \
+    && adduser -S -G django django
 
 COPY --from=deps /app/.venv /app/.venv
 ENV PATH="/app/.venv/bin:$PATH"
