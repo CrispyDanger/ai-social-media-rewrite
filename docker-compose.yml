@@ -5,7 +5,7 @@ services:
     build:
       context: .
       target: runtime
-    command: uvicorn config.asgi:application --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn ai_social.asgi:application --host 0.0.0.0 --port 8000 --reload
     volumes:
       - .:/app
       - /app/.venv
@@ -30,7 +30,41 @@ services:
       retries: 5
 
   redis:
-    image: redis:8-alpine
+    image: redis:8.6.1-alpine
+    volumes:
+      - redisdata:/data
+
+  celery:
+    container_name: celery
+    build: .
+    command: celery -A ai_social worker -l info
+    volumes:
+      - .:/app
+      - /app/.venv
+      - ./data/web:/vol/web
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+
+  celery-beat:
+    container_name: celery-beat
+    build: .
+    command: celery -A ai_social beat -l info
+    volumes:
+      - .:/app
+      - /app/.venv
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
 
 volumes:
   postgres_data:
+  redisdata:

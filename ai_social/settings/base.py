@@ -1,7 +1,7 @@
 """
 Shared Django settings for all environments.
 """
-
+import sys
 from pathlib import Path
 
 from datetime import timedelta
@@ -9,6 +9,8 @@ from datetime import timedelta
 import environ
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+sys.path.append(str(BASE_DIR / 'ai_social'))
 
 env = environ.Env(
     DEBUG=(bool, False),
@@ -75,7 +77,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'config.urls'
+ROOT_URLCONF = 'ai_social.urls'
 
 TEMPLATES = [
     {
@@ -92,7 +94,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'config.wsgi.application'
+WSGI_APPLICATION = 'ai_social.wsgi.application'
 
 
 # Database
@@ -135,6 +137,10 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
+
+CELERY_BROKER_URL = env('REDIS_URL', default='redis://127.0.0.1:6379/0')
+CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+CELERY_TIMEZONE = TIME_ZONE
 
 
 # Static files (CSS, JavaScript, Images)

@@ -74,6 +74,7 @@ venv.bak/
 
 # Celery
 celerybeat-schedule
+celerybeat-schedule-*
 celerybeat.pid
 
 # Scrapy
