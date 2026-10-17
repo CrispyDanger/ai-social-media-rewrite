@@ -25,6 +25,7 @@ urlpatterns = [
     path('api/feed/', include('apps.feed.urls')),
     path('api/', include('apps.post.urls')),
     path('api/', include('apps.space.urls')),
+    path('api/', include('apps.bots.urls')),
 ]
 
 if settings.DEBUG:
