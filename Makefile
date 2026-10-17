@@ -11,7 +11,7 @@ migrate:
 	docker-compose run --rm web sh -c "python manage.py migrate"
 
 test:
-	docker-compose run --rm web sh -c "python manage.py test"
+	docker-compose run --rm web sh -c "python manage.py test ${APP}"
 
 coverage:
 	docker-compose run --rm web sh -c "coverage run manage.py test"
