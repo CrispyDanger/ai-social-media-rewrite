@@ -2,7 +2,7 @@
 
 Working board for the rest of this project. Frontend work lives in the sibling `frontend` repo. Keep this file as the single list.
 
-Pulse is a portfolio SaaS demo. Humans already post in spaces. The remaining product is a Stripe subscription that unlocks scheduled AI users, run with the subscriber's OpenRouter key.
+Pulse is a portfolio SaaS demo. Humans already post in spaces. The remaining product is a Stripe subscription that unlocks scheduled AI users, run with the server OpenRouter key (`OPENROUTER_API_KEY`).
 
 ## Definition of done
 
@@ -10,9 +10,8 @@ A stranger can do this locally, in about two minutes:
 
 1. Sign up and use spaces as a human (this already works).
 2. Open Pricing and pay with Stripe test card `4242`.
-3. Save an OpenRouter key (only required after they subscribe).
-4. Create an AI user in a space (persona + handle).
-5. Watch that user post or reply on a timer, counted against a daily cap.
+3. Create an AI user in a space (persona + handle).
+4. Watch that user post or reply on a timer, counted against a daily cap.
 
 Then cancel in the Customer Portal and confirm the bots stop.
 
@@ -24,7 +23,7 @@ Not in "done": production deploy, Stripe Tax, Metronome, a second paid tier.
 
 **Plans.**
 
-- Free: human posts, 0 AI users, no OpenRouter gate.
+- Free: human posts, 0 AI users.
 - Pulse: one Stripe Product, one monthly Price. 3 AI users. 24 AI posts per UTC day.
 
 **Billing.** Stripe Checkout in `mode: 'subscription'`, Customer Portal, signed webhooks. Restricted test key (`rk_test_…`). Instantiate `StripeClient`. Do not pass `payment_method_types`. Do not turn on `automatic_tax`. Daily AI-post usage is an app counter, not Stripe Billing Meters.
@@ -32,7 +31,7 @@ Not in "done": production deploy, Stripe Tax, Metronome, a second paid tier.
 **Bot loop.** Celery Beat on the Redis already in `docker-compose.yml`. About every 5 minutes locally, each active AI user reads recent space posts and may post or reply. Skip the tick when any of these is true:
 
 - owner subscription is not `active` or `trialing`
-- OpenRouter key is missing
+- `OPENROUTER_API_KEY` is missing
 - daily cap is hit
 - the last several posts in the space are all bots
 
@@ -55,10 +54,9 @@ flowchart LR
   human --> botUi --> entitle
   beat --> entitle
   beat --> agent --> feed
-  entitle -->|owner key| agent
 ```
 
-Reuse `UserSettings.openrouter_api_key` and `apps.account.services.api_key.get_openrouter_api_key`. New app `apps.billing`. Fill in `apps.bots`. Add Compose services `worker` and `beat`.
+Bots call OpenRouter with `settings.OPENROUTER_API_KEY`. New app `apps.billing`. Fill in `apps.bots`. Add Compose services `worker` and `beat`.
 
 ## Kanban
 
@@ -72,15 +70,8 @@ Move a line by changing `[ ]` to `[x]` and, if you want a paper trail, add `(don
 - [x] Text posts: create, reply, quote, edit, delete
 - [x] Following feed API
 - [x] For-you feed API (no UI)
-- [x] Encrypted OpenRouter key field
-- [x] `GET` / `PATCH /api/auth/settings/`
 - [x] Docker: web, Postgres, Redis
 - [x] Pulse UI: picker, space feed, composer, post detail, invites, app shell
-
-### Doing
-
-- [ ] Finish OpenRouter settings UI in the frontend working tree (`settings/+page.svelte`, `OpenRouterKeyModal.svelte`)
-- [ ] Stop blocking free users with the key modal. Require a key only when they subscribe or create an AI user
 
 ### Todo
 
@@ -104,10 +95,10 @@ Move a line by changing `[ ]` to `[x]` and, if you want a paper trail, add `(don
 
 - [ ] `User.is_bot` plus `BotPersona` (owner, space, prompt, model id, last_posted_at)
 - [ ] CRUD: list / create / update / deactivate AI users in a space (owner only)
-- [ ] Gate create on subscription + key + seat cap
+- [ ] Gate create on subscription + seat cap
 - [ ] Celery + Beat in Compose
 - [ ] Tick task per active persona (~5 min locally)
-- [ ] `apps/bots/services/openrouter.py` + pydantic-ai agent using the owner's key
+- [ ] pydantic-ai agent using `settings.OPENROUTER_API_KEY`
 - [ ] Persist generated text through the existing post-create path
 - [ ] Daily usage counter. Skip the tick at cap. Show "quota reached" in settings
 - [ ] Frontend AI users panel (space or settings): persona form, active toggle, next-tick copy
@@ -118,7 +109,7 @@ Move a line by changing `[ ]` to `[x]` and, if you want a paper trail, add `(don
 - [ ] Product README: what Pulse is, architecture sketch, env vars, Stripe test cards, demo script
 - [ ] Replace placeholder `pyproject.toml` description
 - [ ] Backend test job in GitHub Actions
-- [ ] Manual demo pass: subscribe → key → create bot → tick posts → cancel → bots stop
+- [ ] Manual demo pass: subscribe → create bot → tick posts → cancel → bots stop
 
 ### Parked
 
