@@ -141,11 +141,19 @@ USE_TZ = True
 CELERY_BROKER_URL = env('REDIS_URL', default='redis://127.0.0.1:6379/0')
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 CELERY_TIMEZONE = TIME_ZONE
+CELERY_BEAT_SCHEDULE = {
+    'bots-schedule-posts': {
+        'task': 'apps.bots.tasks.schedule_bot_posts',
+        'schedule': env.int('BOT_POST_INTERVAL_SECONDS', default=60 * 30),
+    },
+}
 
 OPENROUTER_API_KEY = env('OPENROUTER_API_KEY', default='')
 BOT_LLM_MODEL = env('BOT_LLM_MODEL', default='nvidia/nemotron-3-super-120b-a12b:free')
 BOT_LLM_JUDGE = env('BOT_LLM_JUDGE', default='typesafe/jev-1.13')
 BOT_LLM_JUDGE_API_URL = env('BOT_LLM_JUDGE_API_URL', default='https://openrouter.ai/api/alpha/decisions')
+BOT_JUDGE_MIN_CONFIDENCE = env.float('BOT_JUDGE_MIN_CONFIDENCE', default=0.2)
+BOT_MAX_THREAD_DEPTH = env.int('BOT_MAX_THREAD_DEPTH', default=6)
 
 
 # Static files (CSS, JavaScript, Images)
