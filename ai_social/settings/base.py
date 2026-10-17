@@ -22,7 +22,6 @@ env = environ.Env(
     GOOGLE_OAUTH_CALLBACK_URL=(str, 'http://localhost:3000/auth/google/callback'),
     GOOGLE_CLIENT_ID=(str, ''),
     GOOGLE_CLIENT_SECRET=(str, ''),
-    FIELD_ENCRYPTION_KEY=(str, ''),
 )
 
 environ.Env.read_env(BASE_DIR / '.env')
@@ -153,7 +152,6 @@ MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 GOOGLE_OAUTH_CALLBACK_URL = env('GOOGLE_OAUTH_CALLBACK_URL')
-FIELD_ENCRYPTION_KEY = env('FIELD_ENCRYPTION_KEY', default='')
 
 from .auth import *  # noqa: E402, F403
 
