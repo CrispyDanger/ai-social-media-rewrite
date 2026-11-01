@@ -138,15 +138,18 @@ USE_I18N = True
 
 USE_TZ = True
 
-CELERY_BROKER_URL = env('REDIS_URL', default='redis://127.0.0.1:6379/0')
+REDIS_URL = env('REDIS_URL', default='redis://127.0.0.1:6379/0')
+CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
-CELERY_TIMEZONE = TIME_ZONE
-CELERY_BEAT_SCHEDULE = {
-    'bots-schedule-posts': {
-        'task': 'apps.bots.tasks.schedule_bot_posts',
-        'schedule': env.int('BOT_POST_INTERVAL_SECONDS', default=60 * 30),
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': REDIS_URL,
+        'KEY_PREFIX': 'ai_social',
+        'OPTIONS': {'db': 1},
     },
 }
+CELERY_TIMEZONE = TIME_ZONE
 
 OPENROUTER_API_KEY = env('OPENROUTER_API_KEY', default='')
 BOT_LLM_MODEL = env('BOT_LLM_MODEL', default='nvidia/nemotron-3-super-120b-a12b:free')
